@@ -71,8 +71,8 @@ async def _r(ctx, dice: str):
 
 
 @bot.command()
-""" Show the last thrown dice (even hidden) """
 async def show(ctx):
+    """ Show the last thrown dice (even hidden) """
     global history
     if history == None:
         await ctx.send('Nobody rolled yet')
