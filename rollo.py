@@ -4,7 +4,7 @@ import logging
 from environs import Env
 from discord.ext import commands
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('Rollo')
 bot = commands.Bot(("!", "?", "->"))
 history = None
 
@@ -21,17 +21,18 @@ async def ping(ctx):
 
 @bot.command()
 async def roll(ctx, dice: str):
-    """Rolls a dice in NdN format."""
-    if ctx.prefix == '?':
-        await rh(ctx, dice)
-    elif ctx.prefix == '!':
+    """Rolls a dice in NdN format, depending on prefix (!, ?, ->)."""
+    if ctx.prefix == '!':
         await r(ctx, dice)
+    elif ctx.prefix == '?':
+        await rh(ctx, dice)
     elif ctx.prefix == '->':
         await rp(ctx, dice)
 
 
 @bot.command()
 async def r(ctx, dice: str):
+    """ Roll a dice in NdN format openly """
     logger.debug("Rolling open")
     result = await _r(ctx, dice)
     await ctx.send(result)
@@ -39,6 +40,7 @@ async def r(ctx, dice: str):
 
 @bot.command()
 async def rh(ctx, dice: str):
+    """ Roll a dice in NdN format hidden (PM) """
     logger.debug("Rolling hidden")
     result = await _r(ctx, dice)
     await ctx.send(f'{ctx.message.author.mention} rolled hidden!')
@@ -47,6 +49,7 @@ async def rh(ctx, dice: str):
 
 @bot.command()
 async def rp(ctx, dice: str):
+    """ Roll a dice in NdN format hidden, no info is shown """
     logger.debug("Rolled and passed")
     result = await _r(ctx, dice)
     await ctx.send(f'{ctx.message.author.mention} rolled hidden and passed on!')
@@ -68,6 +71,7 @@ async def _r(ctx, dice: str):
 
 
 @bot.command()
+""" Show the last thrown dice (even hidden) """
 async def show(ctx):
     global history
     if history == None:
@@ -79,34 +83,36 @@ async def show(ctx):
 
 @bot.command(description='For when you wanna settle the score some other way')
 async def choose(ctx, *choices: str):
-    """Chooses between multiple choices."""
+    """Choose between multiple choices."""
     await ctx.send(random.choice(choices))
 
 
 @bot.group()
 async def meier(ctx):
-
+    """ Roll two hidden d6 """
     if ctx.invoked_subcommand is None:
         await rh(ctx, '2d6')
 
 
 @meier.command()
 async def hoeher(ctx):
+    """ Roll two hidden d6 and pass on """
     await rp(ctx, '2d6')
 
 
 @meier.command()
 async def zeig(ctx):
+    """ Show the last thrown dice """
     await show(ctx)
 
 
 def setup_logger(log_level):
     global logger
     logger.setLevel(log_level)
-    ch = logging.StreamHandler()
-    ch.setLevel(log_level)
     formatter = logging.Formatter(
         '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    ch = logging.StreamHandler()
+    ch.setLevel(log_level)
     ch.setFormatter(formatter)
     logger.addHandler(ch)
 
