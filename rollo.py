@@ -1,12 +1,20 @@
 import random
 import logging
 
+import numpy as np
 from environs import Env
-from discord.ext import commands
+from discord.ext.commands import Bot
+
+
+class Rollo(Bot):
+
+    def __init__(self, command_prefix, description=None, **options):
+        super().__init__(command_prefix, description=description, **options)
+        self.history = {}
+
 
 logger = logging.getLogger('Rollo')
-bot = commands.Bot(("!", "?", "->"))
-history = None
+bot = Rollo(("!", "?", "->"))
 
 
 @bot.event
@@ -16,6 +24,7 @@ async def on_ready():
 
 @bot.command()
 async def ping(ctx):
+    """ Ping the bot """
     await ctx.send('pong')
 
 
@@ -61,11 +70,12 @@ async def _r(ctx, dice: str):
     except Exception:
         await ctx.send('Format has to be in NdN!')
         return
-    result = [random.randint(1, limit) for r in range(rolls)]
-    result.sort(reverse=True)
+    result = np.random.randint(low=1, high=limit+1, size=rolls)
+    result = np.sort(result)[::-1]
     logger.debug(result)
-    global history
-    history = result
+    guild = ctx.guild if ctx.guild else 'default'
+    logger.debug(guild)
+    bot.history[guild] = result
     result = ', '.join(map(str, result))
     return result
 
@@ -73,15 +83,16 @@ async def _r(ctx, dice: str):
 @bot.command()
 async def show(ctx):
     """ Show the last thrown dice (even hidden) """
-    global history
-    if history == None:
+    guild = ctx.guild if ctx.guild else 'default'
+    roll = bot.history.get(guild)
+    if roll == None:
         await ctx.send('Nobody rolled yet')
     else:
-        result = ', '.join(map(str, history))
+        result = ', '.join(map(str, roll))
         await ctx.send(result)
 
 
-@bot.command(description='For when you wanna settle the score some other way')
+@bot.command()
 async def choose(ctx, *choices: str):
     """Choose between multiple choices."""
     await ctx.send(random.choice(choices))
@@ -125,7 +136,7 @@ def main():
 
     setup_logger(env.int('LOG_LEVEL', logging.INFO))
 
-    logger.info('Starting bot')
+    logger.debug('Starting bot')
     bot.run(env('BOT_TOKEN'))
 
 
