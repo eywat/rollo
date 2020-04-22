@@ -1,6 +1,8 @@
 import random
 import logging
 
+from collections import deque
+
 import numpy as np
 from environs import Env
 from discord.ext.commands import Bot
@@ -11,7 +13,7 @@ class Rollo(Bot):
     def __init__(self, command_prefix, description=None, **options):
         super().__init__(command_prefix, description=description, **options)
         self.history = {}
-
+        self.meier_history = {}
 
 logger = logging.getLogger('Rollo')
 bot = Rollo(("!", "?", "->"))
@@ -29,63 +31,73 @@ async def ping(ctx):
 
 
 @bot.command()
-async def roll(ctx, dice: str):
+async def roll(ctx, dice: str, history: dict = bot.history):
     """Rolls a dice in NdN format, depending on prefix (!, ?, ->)."""
     if ctx.prefix == '!':
-        await r(ctx, dice)
+        await r(ctx, dice, history)
     elif ctx.prefix == '?':
-        await rh(ctx, dice)
+        await rh(ctx, dice, history)
     elif ctx.prefix == '->':
-        await rp(ctx, dice)
+        await rp(ctx, dice, history)
 
 
 @bot.command()
-async def r(ctx, dice: str):
+async def r(ctx, dice: str, history: dict = bot.history):
     """ Roll a dice in NdN format openly """
     logger.debug("Rolling open")
-    result = await _r(ctx, dice)
+    result = await _r(ctx, dice, history)
+    if not result: 
+        return 
     await ctx.send(result)
 
 
 @bot.command()
-async def rh(ctx, dice: str):
+async def rh(ctx, dice: str, history: dict = bot.history):
     """ Roll a dice in NdN format hidden (PM) """
     logger.debug("Rolling hidden")
-    result = await _r(ctx, dice)
+    result = await _r(ctx, dice, history)
+    if not result: 
+        return 
     await ctx.send(f'{ctx.message.author.mention} rolled hidden!')
     await ctx.message.author.send(result)
 
 
 @bot.command()
-async def rp(ctx, dice: str):
+async def rp(ctx, dice: str, history: dict = bot.history):
     """ Roll a dice in NdN format hidden, no info is shown """
     logger.debug("Rolled and passed")
-    result = await _r(ctx, dice)
+    result = await _r(ctx, dice, history)
+    if not result: 
+        return 
     await ctx.send(f'{ctx.message.author.mention} rolled hidden and passed on!')
 
 
-async def _r(ctx, dice: str):
+async def _r(ctx, dice: str, history: dict = bot.history):
     try:
         rolls, limit = map(int, dice.split('d'))
     except Exception:
         await ctx.send('Format has to be in NdN!')
-        return
+        return None
+    if rolls > 200 or limit > 200: 
+        await ctx.send("Fuck off! Use propper numbers")
+        return None
+
     result = np.random.randint(low=1, high=limit+1, size=rolls)
     result = np.sort(result)[::-1]
     logger.debug(result)
     guild = ctx.guild if ctx.guild else 'default'
     logger.debug(guild)
-    bot.history[guild] = result
+    history[guild] = result
     result = ', '.join(map(str, result))
     return result
 
 
 @bot.command()
-async def show(ctx):
+async def show(ctx, history=bot.history):
     """ Show the last thrown dice (even hidden) """
     guild = ctx.guild if ctx.guild else 'default'
-    roll = bot.history.get(guild)
-    if roll == None:
+    roll = history.get(guild, None)
+    if roll is None:
         await ctx.send('Nobody rolled yet')
     else:
         result = ', '.join(map(str, roll))
@@ -98,26 +110,28 @@ async def choose(ctx, *choices: str):
     await ctx.send(random.choice(choices))
 
 
+
 @bot.group()
 async def meier(ctx):
     """ Roll two hidden d6 """
     if ctx.invoked_subcommand is None:
-        await rh(ctx, '2d6')
+        await rh(ctx, '2d6', bot.meier_history)
 
 
 @meier.command()
 async def hoeher(ctx):
     """ Roll two hidden d6 and pass on """
-    await rp(ctx, '2d6')
+    
+    await rp(ctx, '2d6', bot.meier_history)
 
 
 @meier.command()
 async def zeig(ctx):
     """ Show the last thrown dice """
-    await show(ctx)
+    await show(ctx, bot.meier_history)
 
 
-def setup_logger(log_level):
+def setup_logger(log_level: int):
     global logger
     logger.setLevel(log_level)
     formatter = logging.Formatter(
