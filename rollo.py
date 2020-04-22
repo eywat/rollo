@@ -1,6 +1,5 @@
 import random
 import logging
-from collections import deque
 
 import numpy as np
 from environs import Env
@@ -29,11 +28,11 @@ async def ping(ctx):
     await ctx.send('pong')
 
 
-@bot.command()
+@bot.command(aliases=['r'])
 async def roll(ctx, dice: str, history: dict = bot.history):
-    """Rolls a dice in NdN format, depending on prefix (!, ?, ->)."""
+    """Rolls a dice in NdN format, depending on prefix: !, ?, ->. (Alt command: r)"""
     if ctx.prefix == '!':
-        await r(ctx, dice, history)
+        await ro(ctx, dice, history)
     elif ctx.prefix == '?':
         await rh(ctx, dice, history)
     elif ctx.prefix == '->':
@@ -41,7 +40,7 @@ async def roll(ctx, dice: str, history: dict = bot.history):
 
 
 @bot.command()
-async def r(ctx, dice: str, history: dict = bot.history):
+async def ro(ctx, dice: str, history: dict = bot.history):
     """ Roll a dice in NdN format openly """
     logger.debug("Rolling open")
     result = await _r(ctx, dice, history)
@@ -91,9 +90,9 @@ async def _r(ctx, dice: str, history: dict = bot.history):
     return result
 
 
-@bot.command()
+@bot.command(aliases=['s'])
 async def show(ctx, history=bot.history):
-    """ Show the last thrown dice (even hidden) """
+    """ Show the last thrown dice, even hidden ones. (Alt command: s) """
     guild = ctx.guild if ctx.guild else 'default'
     roll = history.get(guild, None)
     if roll is None:
