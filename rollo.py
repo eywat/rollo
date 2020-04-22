@@ -1,6 +1,5 @@
 import random
 import logging
-
 from collections import deque
 
 import numpy as np
@@ -111,25 +110,23 @@ async def choose(ctx, *choices: str):
 
 
 
-@bot.group()
+@bot.group(aliases=['m'])
 async def meier(ctx):
-    """ Roll two hidden d6 """
+    """ Roll two hidden d6. Result is stored in extra history (Alt command: m) """
     if ctx.invoked_subcommand is None:
         await rh(ctx, '2d6', bot.meier_history)
 
 
-@meier.command()
+@meier.command(aliases=['h'])
 async def hoeher(ctx):
-    """ Roll two hidden d6 and pass on """
-    
+    """ Roll two hidden d6 and pass on. (Alt command: h) """
     await rp(ctx, '2d6', bot.meier_history)
 
 
-@meier.command()
+@meier.command(aliases=['z'])
 async def zeig(ctx):
-    """ Show the last thrown dice """
+    """ Show the last thrown dice in the round. (Alt command: z)"""
     await show(ctx, bot.meier_history)
-
 
 def setup_logger(log_level: int):
     global logger
