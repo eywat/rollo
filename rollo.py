@@ -1,14 +1,15 @@
-import asyncio
 import random
 import logging
+import asyncio
 from tempfile import TemporaryFile
 from collections import OrderedDict
 
+import discord
 import numpy as np
 import seaborn as sns
-import discord
-from discord.ext.commands import Bot, Cog, command, group
+import matplotlib.pyplot as plt
 from environs import Env
+from discord.ext.commands import Bot, Cog, command, group
 
 logger = logging.getLogger('Rollo')
 
@@ -78,13 +79,16 @@ class General(Cog):
 
         await asyncio.sleep(time)
 
-        self.bot.remove_listener(vote.on_vote)
+        self.bot.remove_listener(vote.on_vote, name='on_message')
         logger.debug("Removed voting listener")
         results = vote.format_results()
         hist = vote.histogram()
         if hist:
-            await ctx.send(f"Voting finished.\n{results}", file=discord.File(hist, "results.png"))
-            hist.close()
+            with TemporaryFile() as f:
+                hist.savefig(f)
+                f.flush()
+                f.seek(0)
+                await ctx.send(f"Voting finished.\n{results}", file=discord.File(f, "results.png"))
         else:
             await ctx.send(f"Voting finished.\n{results}")
         del self.vote[guild]
@@ -110,6 +114,7 @@ class Vote:
             logger.debug("Detected command")
             return
         if message.author in self.voters:
+            logger.debug("Already voted %s", message.author)
             return
 
         self.voters.append(message.author)
@@ -143,24 +148,23 @@ class Vote:
             except:
                 logger.debug("Not found")
                 return
+
     def format_results(self) -> str:
         return "\n".join(
             map(lambda choice: f"{choice[0]}: {choice[1]}\t\u21D2 {choice[2]}",
                 self.choices))
 
-    def histogram(self) -> TemporaryFile:
+    def histogram(self) -> plt.Figure:
         x = list(map(lambda choice: choice[1], self.choices))
         y = list(map(lambda choice: choice[2], self.choices))
 
         if not x or not y:
             return None
 
-        f = TemporaryFile()
         hist = sns.barplot(x, y)
-        hist.get_figure().savefig(f)
-        f.flush()
-        f.seek(0)
-        return f
+        fig = hist.get_figure()
+
+        return fig
 
 
 class Meiern(Cog):
@@ -251,11 +255,11 @@ def create_bot() -> Bot:
     async def on_ready():
         logger.info('Logged in as %s: %d', bot.user.name, bot.user.id)
 
-    # async def on_command_error(ctx, error):
-    #     logger.warning(f"Command error: {error}")
+    async def on_command_error(ctx, error):
+        logger.warning(f"Command error: {error}")
 
     bot.add_listener(on_ready, 'on_ready')
-    # bot.add_listener(on_command_error, 'on_command_error')
+    bot.add_listener(on_command_error, 'on_command_error')
     bot.add_cog(General(bot))
     bot.add_cog(Meiern())
 
