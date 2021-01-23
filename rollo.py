@@ -1,19 +1,19 @@
-import random
-import logging
+""" Entry point for rollo the Discord bot. The main bot class is defined here as well """
+
 import asyncio
+import logging
+import random
 from tempfile import TemporaryFile
-from collections import OrderedDict
 
 import aiohttp
 import discord
-from discord.ext.commands import Bot, Cog, Context, group, command
-
+from discord.ext.commands import Bot, Cog, Context, command
 from environs import Env
 
-from dice import Meiern, ro, rp, rh, _show
+from dice import Meiern, _show, rh, ro, rp
 from memes import Memes
-from vote import Vote
 from util import LOGGER, setup_logger
+from vote import Vote
 
 
 class Rollo(Bot):
@@ -62,6 +62,7 @@ class General(Cog):
         guild = ctx.guild
         if not ctx.guild:
             await ctx.send("This feature is only supported in guilds")
+            return
         vote = self.votes.get(guild)
         if vote:
             await ctx.send("There is already a vote running")
@@ -109,7 +110,7 @@ def create_bot(env: Env, session: aiohttp.ClientSession) -> Bot:
     bot.add_listener(on_command_error, 'on_command_error')
     bot.add_cog(General(bot))
     bot.add_cog(Meiern())
-    if env('TENOR_TOKEN', None):
+    if env.str('TENOR_TOKEN', None):
         bot.add_cog(Memes(session, env('TENOR_TOKEN')))
 
     return bot
@@ -118,14 +119,19 @@ def create_bot(env: Env, session: aiohttp.ClientSession) -> Bot:
 async def main():
     env = Env()
     env.read_env()
-    setup_logger(env.int('LOG_LEVEL', logging.INFO))
+    setup_logger(
+        env.int('LOG_LEVEL', logging.INFO),
+        env.path('LOG_FILE', None))
 
     async with aiohttp.ClientSession() as session:
         bot = create_bot(env, session)
 
         LOGGER.debug('Starting bot')
-        await bot.start(env('BOT_TOKEN'))
+        await bot.start(env.str('BOT_TOKEN'))
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    finally:
+        logging.shutdown()

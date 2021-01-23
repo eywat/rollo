@@ -1,3 +1,5 @@
+""" Memes Cog definition """
+
 from functools import partial
 
 import aiohttp
@@ -49,7 +51,7 @@ class Memes(Cog):
 
     @group()
     async def memes(self, ctx: Context):
-        """ Spicy hot mems """
+        """ Spicy hot memes """
         if ctx.invoked_subcommand is None:
             await self.search(ctx, 'minion')
 
@@ -59,7 +61,7 @@ class Memes(Cog):
         try:
             meme = await self.request('search', q=term, limit=50)
         except Exception as e:
-            LOGGER.warn("Meme search unsuccessful.", str(e))
+            LOGGER.warn("Meme search unsuccessful: %s", str(e))
             meme = "Something went wrong ;_;"
         await ctx.send(meme)
 

@@ -1,3 +1,4 @@
+""" Here voting utilities are defined """
 
 import seaborn as sns
 import matplotlib.pyplot as plt
