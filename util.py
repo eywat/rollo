@@ -2,17 +2,19 @@
 
 import logging
 from pathlib import Path
+from typing import Iterator
 
 import aiohttp
 
-LOGGER = logging.getLogger('Rollo')
+LOGGER = logging.getLogger("Rollo")
 
 
 def setup_logger(log_level: int, log_file: Path = None):
     global LOGGER
     LOGGER.setLevel(log_level)
     formatter = logging.Formatter(
-        '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
     if log_file:
         fh = logging.FileHandler(log_file)
         fh.setLevel(log_level)
@@ -28,11 +30,11 @@ def setup_logger(log_level: int, log_file: Path = None):
 
 
 def build_query(url: str, *args, **kwargs) -> str:
-    url = url.strip('/')
-    args = map(lambda arg: arg.strip('/'), args)
+    url = url.strip("/")
+    args = map(lambda arg: arg.strip("/"), args)
     kwargs = dict(filter(lambda kv: kv[1] is not None, kwargs.items()))
-    url = '/'.join([url, *args]) + '?'
-    url += '&'.join([f'{key}={value}' for key, value in kwargs.items()])
+    url = "/".join([url, *args]) + "?"
+    url += "&".join([f"{key}={value}" for key, value in kwargs.items()])
     return url
 
 

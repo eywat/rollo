@@ -4,9 +4,12 @@ import asyncio
 import logging
 import random
 from tempfile import TemporaryFile
+from typing import Dict, List, Optional, Tuple, Union
 
 import aiohttp
 import discord
+import numpy as np
+from discord import Guild
 from discord.ext.commands import Bot, Cog, Context, command
 from environs import Env
 
@@ -17,9 +20,15 @@ from vote import Vote
 
 
 class Rollo(Bot):
-
-    def __init__(self, command_prefix, description=None, **options):
-        super().__init__(command_prefix, description=description, **options)
+    def __init__(
+        self,
+        command_prefix: Union[Tuple[str, ...], str, None] = ("!", "?", "->"),
+        description: Optional[str] = None,
+        **options,
+    ):
+        super().__init__(
+            command_prefix=command_prefix, description=description, **options
+        )
 
 
 class General(Cog):
@@ -28,39 +37,39 @@ class General(Cog):
     def __init__(self, bot: Bot):
         super().__init__()
         self.bot = bot
-        self.history: dict = {}
+        self.history: Dict[Union[str, Guild], np.ndarray] = {}
         self.votes: dict = {}
 
     @command()
     async def ping(self, ctx: Context):
         """ Ping the bot """
-        await ctx.send('pong')
+        await ctx.send("pong")
 
-    @command(aliases=['r'])
+    @command(aliases=["r"])
     async def roll(self, ctx: Context, dice: str):
         """Rolls a dice in NdN format, depending on prefix: !, ?, ->. (Alt command: r)"""
-        if ctx.prefix == '!':
-            await ro(ctx, dice, self.history)
-        elif ctx.prefix == '?':
+        if ctx.prefix == "?":
             await rh(ctx, dice, self.history)
-        elif ctx.prefix == '->':
+        elif ctx.prefix == "->":
             await rp(ctx, dice, self.history)
+        else:
+            await ro(ctx, dice, self.history)
 
-    @command(aliases=['s'])
+    @command(aliases=["s"])
     async def show(self, ctx: Context):
         """ Show the last thrown dice, even hidden ones. (Alt command: s) """
         await _show(ctx, self.history)
 
-    @command(aliases=['c'])
+    @command(aliases=["c"])
     async def choose(self, ctx: Context, *choices: str):
         """Choose between multiple choices. (Alt command: c)"""
         await ctx.send(random.choice(choices))
 
-    @command(aliases=['v'])
+    @command(aliases=["v"])
     async def vote(self, ctx: Context, *choices: str, time=20):
         """ Create a vote. (Alt command: v) """
         guild = ctx.guild
-        if not ctx.guild:
+        if ctx.guild is None:
             await ctx.send("This feature is only supported in guilds")
             return
         vote = self.votes.get(guild)
@@ -68,21 +77,25 @@ class General(Cog):
             await ctx.send("There is already a vote running")
             return
 
-        choices = list(
-            enumerate(
-                map(lambda choice: choice.strip(" ,\n").lower(), choices),
-                1))
-        vote = Vote(self.bot, guild, choices)
+        choice_enum: List[Tuple[int, str]] = list(
+            enumerate(map(lambda choice: choice.strip(" ,\n").lower(), choices), 1)
+        )
+        vote = Vote(self.bot, guild, choice_enum)
         self.votes[guild] = vote
         LOGGER.debug("Started voting listener")
-        self.bot.add_listener(vote.on_vote, name='on_message')
-        choices = "\n".join(
-            map(lambda choice: f"{choice[0]}\t\u21D2 \t{choice[1]}", choices)) if choices else "Open voting"
-        await ctx.send(f"Voting started for {time}s.\n{choices}")
+        self.bot.add_listener(vote.on_vote, name="on_message")
+        choice_text = (
+            "\n".join(
+                map(lambda choice: f"{choice[0]}\t\u21D2 \t{choice[1]}", choice_enum)
+            )
+            if choice_enum
+            else "Open voting"
+        )
+        await ctx.send(f"Voting started for {time}s.\n{choice_text}")
 
         await asyncio.sleep(time)
 
-        self.bot.remove_listener(vote.on_vote, name='on_message')
+        self.bot.remove_listener(vote.on_vote, name="on_message")
         LOGGER.debug("Removed voting listener")
         results = vote.format_results()
         hist = vote.histogram()
@@ -91,7 +104,9 @@ class General(Cog):
                 hist.savefig(f)
                 f.flush()
                 f.seek(0)
-                await ctx.send(f"Voting finished.\n{results}", file=discord.File(f, "results.png"))
+                await ctx.send(
+                    f"Voting finished.\n{results}", file=discord.File(f, "results.png")
+                )
         else:
             await ctx.send(f"Voting finished.\n{results}")
         del self.votes[guild]
@@ -101,18 +116,18 @@ def create_bot(env: Env, session: aiohttp.ClientSession) -> Bot:
     bot = Rollo(("!", "?", "->"))
 
     async def on_ready():
-        LOGGER.info('Logged in as %s: %d', bot.user.name, bot.user.id)
+        LOGGER.info("Logged in as %s: %d", bot.user.name, bot.user.id)
 
     async def on_command_error(_, error):
         LOGGER.warning(f"Command error: {error}")
 
-    bot.add_listener(on_ready, 'on_ready')
-    bot.add_listener(on_command_error, 'on_command_error')
+    bot.add_listener(on_ready, "on_ready")
+    bot.add_listener(on_command_error, "on_command_error")
     bot.add_cog(General(bot))
     bot.add_cog(Meiern())
-    if env.str('TENOR_TOKEN', None):
-        LOGGER.info('Tenor API Key found. Enabling GIF posting!')
-        bot.add_cog(Memes(session, env('TENOR_TOKEN')))
+    if env.str("TENOR_TOKEN", None):
+        LOGGER.info("Tenor API Key found. Enabling GIF posting!")
+        bot.add_cog(Memes(session, env.str("TENOR_TOKEN")))
 
     return bot
 
@@ -120,15 +135,13 @@ def create_bot(env: Env, session: aiohttp.ClientSession) -> Bot:
 async def main():
     env = Env()
     env.read_env()
-    setup_logger(
-        env.int('LOG_LEVEL', logging.INFO),
-        env.path('LOG_FILE', None))
+    setup_logger(env.int("LOG_LEVEL", logging.INFO), env.path("LOG_FILE", None))
 
     async with aiohttp.ClientSession() as session:
         bot = create_bot(env, session)
 
-        LOGGER.debug('Starting bot')
-        await bot.start(env.str('BOT_TOKEN'))
+        LOGGER.debug("Starting bot")
+        await bot.start(env.str("BOT_TOKEN"))
 
 
 if __name__ == "__main__":
