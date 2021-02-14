@@ -111,6 +111,7 @@ def create_bot(env: Env, session: aiohttp.ClientSession) -> Bot:
     bot.add_cog(General(bot))
     bot.add_cog(Meiern())
     if env.str('TENOR_TOKEN', None):
+        LOGGER.info('Tenor API Key found. Enabling GIF posting!')
         bot.add_cog(Memes(session, env('TENOR_TOKEN')))
 
     return bot
