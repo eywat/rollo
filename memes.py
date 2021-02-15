@@ -19,6 +19,7 @@ class Memes(Cog):
     async def request(
         self, command: str, q: Optional[str] = None, limit: int = 50, **kwargs
     ):
+        """ Send a request to tenor with query q for command """
         if command == "trending":
             cache = self.responses[command]
         elif q is None:
@@ -51,7 +52,7 @@ class Memes(Cog):
 
     @group()
     async def memes(self, ctx: Context):
-        """ Spicy hot memes """
+        """ Spicy hot memes. """
         if ctx.invoked_subcommand is None:
             await self.search(ctx, "minion")
 
@@ -61,7 +62,7 @@ class Memes(Cog):
         try:
             meme = await self.request("search", q=term, limit=50)
         except Exception as e:
-            LOGGER.warn("Meme search unsuccessful: %s", str(e))
+            LOGGER.warning("Meme search unsuccessful: %s", str(e))
             meme = "Something went wrong ;_;"
         await ctx.send(meme)
 
@@ -71,7 +72,7 @@ class Memes(Cog):
         try:
             meme = await self.request("random", q=term, limit=50)
         except Exception as e:
-            LOGGER.warn("Random meme search unsuccessful: %s", str(e))
+            LOGGER.warning("Random meme search unsuccessful: %s", str(e))
             meme = "Something went wrong ;_;"
         await ctx.send(meme)
 
@@ -81,6 +82,6 @@ class Memes(Cog):
         try:
             meme = await self.request("trending", limit=50)
         except Exception as e:
-            LOGGER.warn("Trending request unsuccesful: %s", str(e))
+            LOGGER.warning("Trending request unsuccesful: %s", str(e))
             meme = "Something went wrong ;_;"
         await ctx.send(meme)

@@ -14,13 +14,14 @@ class Vote:
     def __init__(self, bot: Bot, guild: Guild, choices: List[Tuple[int, str]]):
         self.bot = bot
         self.guild = guild
-        self.voters = []
+        self.voters = set()
         self.open = not any(choices)
         self.choices = list(map(lambda choice: [*choice, 0], choices))
 
         LOGGER.debug(self.choices)
 
     async def on_vote(self, message):
+        """ React to a message sent in the guild """
         if message.author == self.bot.user:
             LOGGER.debug("Own message")
             return
@@ -31,7 +32,7 @@ class Vote:
             LOGGER.debug("Already voted %s", message.author)
             return
 
-        self.voters.append(message.author)
+        self.voters.add(message.author)
         content = message.content.strip(" ,\n").lower()
         LOGGER.debug(content)
         if self.open:
@@ -59,6 +60,7 @@ class Vote:
                 return
 
     def format_results(self) -> str:
+        """ Format a string to nicely display the vote results. """
         return "\n".join(
             map(
                 lambda choice: f"{choice[0]}: {choice[1]}\t\u21D2 {choice[2]}",
@@ -67,6 +69,7 @@ class Vote:
         )
 
     def histogram(self) -> Optional[plt.Figure]:
+        """ Return a histogram figure of the vote results. """
         x = list(map(lambda choice: choice[1], self.choices))
         y = list(map(lambda choice: choice[2], self.choices))
 

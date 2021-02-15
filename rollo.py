@@ -20,6 +20,8 @@ from vote import Vote
 
 
 class Rollo(Bot):
+    """ Bot class all, here the overall Bot state is managed. """
+
     def __init__(
         self,
         command_prefix: Union[Tuple[str, ...], str, None] = ("!", "?", "->"),
@@ -68,6 +70,7 @@ class General(Cog):
     @command(aliases=["v"])
     async def vote(self, ctx: Context, *choices: str, time=20):
         """ Create a vote. (Alt command: v) """
+        # Check if voting is possible
         guild = ctx.guild
         if ctx.guild is None:
             await ctx.send("This feature is only supported in guilds")
@@ -77,6 +80,7 @@ class General(Cog):
             await ctx.send("There is already a vote running")
             return
 
+        # Attach a number to each choice
         choice_enum: List[Tuple[int, str]] = list(
             enumerate(map(lambda choice: choice.strip(" ,\n").lower(), choices), 1)
         )
@@ -99,7 +103,7 @@ class General(Cog):
         LOGGER.debug("Removed voting listener")
         results = vote.format_results()
         hist = vote.histogram()
-        if hist:
+        if hist is not None:
             with TemporaryFile() as f:
                 hist.savefig(f)
                 f.flush()
@@ -113,19 +117,20 @@ class General(Cog):
 
 
 def create_bot(env: Env, session: aiohttp.ClientSession) -> Bot:
+    """ Setup the Bot """
     bot = Rollo(("!", "?", "->"))
 
     async def on_ready():
         LOGGER.info("Logged in as %s: %d", bot.user.name, bot.user.id)
 
     async def on_command_error(_, error):
-        LOGGER.warning(f"Command error: {error}")
+        LOGGER.warning("Command error: %s", error)
 
     bot.add_listener(on_ready, "on_ready")
     bot.add_listener(on_command_error, "on_command_error")
     bot.add_cog(General(bot))
     bot.add_cog(Meiern())
-    if env.str("TENOR_TOKEN", None):
+    if env.str("TENOR_TOKEN", None) is not None:
         LOGGER.info("Tenor API Key found. Enabling GIF posting!")
         bot.add_cog(Memes(session, env.str("TENOR_TOKEN")))
 
@@ -133,6 +138,7 @@ def create_bot(env: Env, session: aiohttp.ClientSession) -> Bot:
 
 
 async def main():
+    """ Main function """
     env = Env()
     env.read_env()
     setup_logger(env.int("LOG_LEVEL", logging.INFO), env.path("LOG_FILE", None))

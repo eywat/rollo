@@ -59,6 +59,7 @@ async def rp(ctx: Context, dice: str, history: Dict[Union[str, Guild], np.ndarra
 
 
 async def _r(ctx: Context, dice: str, history: Dict[Union[str, Guild], np.ndarray]):
+    """ String parsing and rolling for all dice rolling functions """
     try:
         rolls, limit = map(int, dice.split("d"))
     except Exception:
