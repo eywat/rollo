@@ -8,6 +8,8 @@ from typing import Dict, List, Optional, Tuple, Union
 
 import aiohttp
 import discord
+from discord.errors import PrivilegedIntentsRequired
+from discord.flags import Intents
 import numpy as np
 from discord import Guild
 from discord.ext.commands import Bot, Cog, Context, command
@@ -65,7 +67,18 @@ class General(Cog):
     @command(aliases=["c"])
     async def choose(self, ctx: Context, *choices: str):
         """Choose between multiple choices. (Alt command: c)"""
-        await ctx.send(random.choice(choices))
+        if not choices:
+            try:
+                members = [member async for member in ctx.guild.fetch_members(limit=None)]
+            except PrivilegedIntentsRequired:
+                logging.warning("Privileged intents are required")
+                await ctx.send("I can't decide *_*. (Some privileges are not enabled for this bot)")
+                return
+            logging.debug("Guild members: %s", ', '.join(map(lambda m: m.name, members)))
+            member = random.choice(members)
+            await ctx.send(member.mention)
+        else:
+            await ctx.send(random.choice(choices))
 
     @command(aliases=["v"])
     async def vote(self, ctx: Context, *choices: str, time=20):
@@ -102,23 +115,20 @@ class General(Cog):
         self.bot.remove_listener(vote.on_vote, name="on_message")
         LOGGER.debug("Removed voting listener")
         results = vote.format_results()
-        hist = vote.histogram()
+        hist = vote.termogram()
         if hist is not None:
-            with TemporaryFile() as f:
-                hist.savefig(f)
-                f.flush()
-                f.seek(0)
-                await ctx.send(
-                    f"Voting finished.\n{results}", file=discord.File(f, "results.png")
-                )
+            await ctx.send(f"Voting finished!\n{hist}")
         else:
-            await ctx.send(f"Voting finished.\n{results}")
+            await ctx.send(f"Voting finished!\n{results}")
         del self.votes[guild]
 
 
 def create_bot(env: Env, session: aiohttp.ClientSession) -> Bot:
     """ Setup the Bot """
-    bot = Rollo(("!", "?", "->"))
+    intents = Intents.default()
+    intents.members = True
+
+    bot = Rollo(("!", "?", "->"), intents=intents)
 
     async def on_ready():
         LOGGER.info("Logged in as %s: %d", bot.user.name, bot.user.id)

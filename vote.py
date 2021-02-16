@@ -2,10 +2,9 @@
 
 from typing import List, Tuple, Optional
 
-import seaborn as sns
-import matplotlib.pyplot as plt
 from discord import Guild
 from discord.ext.commands import Bot
+import termplotlib as tpl
 
 from util import LOGGER
 
@@ -68,15 +67,16 @@ class Vote:
             )
         )
 
-    def histogram(self) -> Optional[plt.Figure]:
-        """ Return a histogram figure of the vote results. """
-        x = list(map(lambda choice: choice[1], self.choices))
-        y = list(map(lambda choice: choice[2], self.choices))
 
-        if not x or not y:
+    def termogram(self) -> Optional[str]:
+        """ Return a text histogramm of the vote results. """
+        choice = list(map(lambda choice: choice[1], self.choices))
+        count = list(map(lambda choice: choice[2], self.choices))
+
+        if not count:
             return None
-
-        hist = sns.barplot(x, y)
-        fig = hist.get_figure()
-
-        return fig
+        
+        fig = tpl.figure()
+        fig.barh(count, choice)
+        return fig.get_string()
+        
