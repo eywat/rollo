@@ -30,6 +30,6 @@ If you want to enable functions which access your servers member list you need t
 
 ## TODO ideas
 - [] drinking games ala Piccolo
-- [] choose one chat member
+- [x] choose one chat member
 - [] Trivia questions
 - [] sound effects

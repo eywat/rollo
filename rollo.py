@@ -3,16 +3,14 @@
 import asyncio
 import logging
 import random
-from tempfile import TemporaryFile
 from typing import Dict, List, Optional, Tuple, Union
 
 import aiohttp
-import discord
-from discord.errors import PrivilegedIntentsRequired
-from discord.flags import Intents
 import numpy as np
 from discord import Guild
+from discord.errors import PrivilegedIntentsRequired
 from discord.ext.commands import Bot, Cog, Context, command
+from discord.flags import Intents
 from environs import Env
 
 from dice import Meiern, _show, rh, ro, rp
