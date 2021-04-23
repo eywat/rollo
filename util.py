@@ -2,7 +2,7 @@
 
 import logging
 from pathlib import Path
-from typing import Iterator
+from typing import Any, Dict, Iterator, List, Union
 
 import aiohttp
 
@@ -41,7 +41,7 @@ def build_query(url: str, *args, **kwargs) -> str:
     return url
 
 
-async def get(session: aiohttp.ClientSession, url: str) -> dict:
+async def get(session: aiohttp.ClientSession, url: str) -> Any:
     """ Send a get request using the provided ClientSession to url """
     async with session.get(url) as request:
         data = await request.json()
