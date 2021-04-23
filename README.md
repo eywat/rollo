@@ -29,7 +29,7 @@ If you want to add the Bot to a guild, in the Discord Developer Portal, you need
 If you want to enable functions which access your servers member list you need to enable _SERVER MEMBERS INTENT_ in the _BOT_ tab.
 
 ## TODO ideas
-- [] drinking games ala Piccolo
+- [ ] drinking games ala Piccolo
 - [x] choose one chat member
-- [] Trivia questions
-- [] sound effects
+- [ ] Trivia questions
+- [ ] sound effects
