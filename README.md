@@ -4,7 +4,7 @@ A simple Discord bot for rolling dice, voting and posting GIFs.
 ## Installation 
 Requires: `python 3.6` or higher. 
 
-Install:
+Run:
 ```bash
 git clone https://github.com/eywat/rollo.git
 cd rollo 
@@ -24,7 +24,7 @@ LOG_LEVEL=10 # Optional
 
 To run the bot simply run: `python rollo.py`
 
-If you want to add the Bot to a guild, in the Discord Developer Portal, you will to access _OAuth2_ under your Bot's _Application_. There you have to select `bot` in _SCOPES_ and in the then appearing _BOT PERMISSIONS_ you will need to select `Send Messages, Embed Links, Attach Files, Read Message History`. You can paste the appearing link into your browsers url bar and can select the guild you want to add the bot to. 
+If you want to add the Bot to a guild, in the Discord Developer Portal, you need to access _OAuth2_ under your Bot's _Application_. There you can select `bot` in _SCOPES_ and in the then appearing _BOT PERMISSIONS_ you will need to select `Send Messages, Embed Links, Attach Files, Read Message History`. You can paste the appearing link into your browser's url bar and can select the guild you want to add the bot to. 
 
 If you want to enable functions which access your servers member list you need to enable _SERVER MEMBERS INTENT_ in the _BOT_ tab.
 
