@@ -57,8 +57,9 @@ class Memes(Cog):
             await self.search(ctx, "minion")
 
     @memes.command(aliases=["s"])
-    async def search(self, ctx: Context, term: str):
+    async def search(self, ctx: Context, *terms: str):
         """ Returns 1 of the 50 most popular memes for search term. (Alt command: s)"""
+        term = " ".join(terms)
         try:
             meme = await self.request("search", q=term, limit=50)
         except Exception as e:
@@ -67,8 +68,9 @@ class Memes(Cog):
         await ctx.send(meme)
 
     @memes.command(aliases=["r"])
-    async def random(self, ctx: Context, term: str):
+    async def random(self, ctx: Context, *terms: str):
         """ Returns 1 random meme for search term. (Alt command: r) """
+        term = " ".join(terms)
         try:
             meme = await self.request("random", q=term, limit=50)
         except Exception as e:
